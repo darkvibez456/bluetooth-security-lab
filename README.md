@@ -4,7 +4,7 @@
   <strong>A safe, local-only simulator for learning Bluetooth defensive telemetry</strong>
 </p>
 
-> **Educational and defensive use only.** This repository does **not** scan for Bluetooth devices, connect to them, send packets, jam radio signals, perform denial-of-service actions, or accept real target addresses. All device identifiers are synthetic and begin with `SIM-`.
+> **Educational and defensive use only.** Simulation is the default. An optional hardware mode performs only a short, explicitly confirmed, read-only BLE discovery through BlueZ. It does **not** pair, connect, send packets, jam radio signals, perform denial-of-service actions, select target addresses, or store raw Bluetooth output.
 
 [![Safety: synthetic only](https://img.shields.io/badge/safety-synthetic--only-16a34a)](#safety-boundary)
 [![Python: standard library](https://img.shields.io/badge/python-standard%20library-3776ab)](#requirements)
@@ -31,13 +31,13 @@ The reference-style attack scripts in this area usually accept a device address 
 | Browser UI | `frontend/` | Displays telemetry and defensive lessons |
 | Tests | `tests/` | Validates determinism, bounds, and hardware-free behavior |
 
-There is no Bluetooth adapter dependency, no shell command execution, no packet routine, no thread-flooding routine, and no real address input.
+Simulation has no Bluetooth adapter dependency. Optional hardware discovery requires Linux BlueZ/`bluetoothctl`, uses a fixed time limit, returns salted ephemeral identifiers, and has no packet, pairing, connection, target-selection, or radio-control routine.
 
 ## 3. Requirements
 
 - Python **3.10 or newer**
 - A modern browser
-- No Bluetooth adapter required
+- No Bluetooth adapter required for simulation; optional hardware mode requires Linux BlueZ
 - No third-party Python packages required
 
 Check your Python version:
@@ -64,7 +64,7 @@ python3 backend/server.py
 You should see:
 
 ```text
-Bluetooth Security Lab running at http://127.0.0.1:8080 (safe simulation only)
+Bluetooth Security Lab running at http://127.0.0.1:8080 (simulation default; read-only BLE scan opt-in)
 ```
 
 The server listens on `127.0.0.1` so it is available only on your own computer. Keep this terminal open.
@@ -135,7 +135,31 @@ PORT=9090 python3 backend/server.py
 
 The server still binds to loopback (`127.0.0.1`).
 
-## 7. Tool ka use — kya, kab, aur kyun?
+## 7. Optional real-data discovery
+
+When running on Linux with a local Bluetooth adapter and BlueZ installed, the dashboard exposes a **Hardware capability** panel. The user must explicitly confirm that they own or are authorized to monitor nearby devices before each scan. The scan window is limited to 3–20 seconds and accepts no address or target input.
+
+Install the platform dependency on Debian/Ubuntu if needed:
+
+```bash
+sudo apt install bluez
+sudo systemctl enable --now bluetooth
+```
+
+The scanner reads discovery output from `bluetoothctl` and returns only device names, an optional RSSI value, observation counts, and an ephemeral salted identifier such as `ble-a13f9c20`. Real MAC addresses are never returned to the browser, and raw command output is not persisted. If BlueZ or an adapter is unavailable, the application remains fully usable in simulation mode.
+
+The corresponding API endpoints are:
+
+```bash
+curl http://127.0.0.1:8080/api/hardware/status
+curl -X POST http://127.0.0.1:8080/api/hardware/scan \
+  -H 'Content-Type: application/json' \
+  -d '{"confirm_authorized_scope":true,"duration_seconds":10}'
+```
+
+This feature is for observing devices you are authorized to monitor. Nearby advertisements may belong to other people; do not collect, identify, or retain them. The product intentionally does not implement pairing automation, connections, packet transmission, injection, forced disconnects, advertising spam, jamming, or any disruption behavior.
+
+## 8. Tool ka use — kya, kab, aur kyun?
 
 Yeh project **attack tool nahi** hai. Iska purpose defensive learning hai: synthetic events generate karke dekhna ki noisy behavior ko kaise observe, score, aur control kiya ja sakta hai.
 
@@ -147,6 +171,8 @@ Yeh project **attack tool nahi** hai. Iska purpose defensive learning hai: synth
 | `/api/health` | Check karne ke liye ki server safe mode mein running hai | `curl http://127.0.0.1:8080/api/health` |
 | `/api/scenarios` | Available classroom scenarios list karne ke liye | `curl http://127.0.0.1:8080/api/scenarios` |
 | `/api/simulate` | Programmatically synthetic trace generate karne ke liye | `curl -X POST ...` |
+| `/api/hardware/status` | BlueZ availability aur capability boundary check karne ke liye | `curl http://127.0.0.1:8080/api/hardware/status` |
+| `/api/hardware/scan` | Authorized, time-limited read-only discovery ke liye | `curl -X POST ...` |
 | `/api/docs` | API endpoints aur request format samajhne ke liye | `curl http://127.0.0.1:8080/api/docs` |
 | `tests/` | Code safe aur predictable hai ya nahi verify karne ke liye | `python3 -m unittest discover -s tests -v` |
 
@@ -164,7 +190,7 @@ Yeh project **attack tool nahi** hai. Iska purpose defensive learning hai: synth
 
 Is project ko real device scan karne, kisi Bluetooth address ko target karne, packets bhejne, radio interfere karne, pairing force karne, ya kisi device/service ko disrupt karne ke liye use nahi kiya ja sakta aur nahi kiya jana chahiye. Real-world testing ke liye written authorization, isolated lab, aur vendor disclosure process zaroori hai.
 
-## 8. Run the tests
+## 9. Run the tests
 
 The test suite uses only Python's standard library:
 
@@ -175,7 +201,7 @@ python3 -m compileall -q backend tests
 
 The tests verify that scenarios are present, traces are deterministic, intensity bounds are enforced, and generated identifiers remain synthetic.
 
-## 9. Suggested classroom exercises
+## 10. Suggested classroom exercises
 
 1. Generate the same scenario twice with the same seed. What stays constant?
 2. Increase intensity from 2 to 9. Which metrics change?
@@ -183,19 +209,20 @@ The tests verify that scenarios are present, traces are deterministic, intensity
 4. Design a dashboard alert rule using only the synthetic event fields.
 5. Discuss what additional privacy controls would be needed before logging real device telemetry.
 
-## 10. Safety boundary
+## 11. Safety boundary
 
 Do not extend this project with Bluetooth scanning, pairing automation, packet injection, radio interference, target selection, disruption logic, or instructions for impacting devices. If you are studying a real Bluetooth security issue, use an isolated lab, obtain authorization, minimize collection, and follow the affected vendor's coordinated vulnerability disclosure process.
 
 This project is a **simulation and teaching aid**, not a penetration-testing tool and not evidence that a real device is vulnerable.
 
-## 11. Project structure
+## 12. Project structure
 
 ```text
 bluetooth-security-lab/
 ├── backend/
 │   ├── server.py          # local HTTP API and static-file server
-│   └── simulator.py       # deterministic synthetic event engine
+│   ├── simulator.py       # deterministic synthetic event engine
+│   └── telemetry.py       # opt-in read-only BlueZ discovery with privacy masking
 ├── frontend/
 │   ├── index.html         # dashboard markup
 │   ├── app.js             # API calls and rendering
@@ -208,6 +235,6 @@ bluetooth-security-lab/
 └── README.md
 ```
 
-## 12. License
+## 13. License
 
 MIT. See [LICENSE](LICENSE).

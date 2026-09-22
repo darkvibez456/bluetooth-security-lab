@@ -3,31 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A local-only synthetic Bluetooth security telemetry lab.">
+  <meta name="description" content="A local-only Bluetooth defensive telemetry lab with optional privacy-safe discovery.">
   <title>Bluetooth Security Lab</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <main class="shell">
-    <nav class="topbar"><span class="brand-mark">BSL</span><span>Bluetooth Security Lab</span><span class="status"><i></i> LOCAL / SAFE MODE</span></nav>
+    <nav class="topbar"><span class="brand-mark">BSL</span><span>Bluetooth Security Lab</span><span class="status"><i></i> LOCAL / DEFENSIVE MODE</span></nav>
     <header class="hero">
       <p class="eyebrow">DEFENSIVE TELEMETRY WORKBENCH</p>
       <h1>Study the signal.<br><em>Protect the system.</em></h1>
-      <p class="subtitle">Generate synthetic Bluetooth event patterns, explore their risk signals, and practice choosing defensive controls — without touching live radio hardware.</p>
+      <p class="subtitle">Model suspicious patterns with synthetic traces, or opt in to a short, read-only discovery of devices you are authorized to monitor.</p>
     </header>
-    <aside class="warning"><span class="warning-icon">!</span><div><strong>Safety boundary</strong><br>This lab is local-only. It does not scan, connect, jam, inject packets, target devices, or invoke Bluetooth system tools.</div></aside>
+    <aside class="warning"><span class="warning-icon">!</span><div><strong>Safety boundary</strong><br>Hardware mode is discovery-only and time-limited. It never pairs, connects, sends packets, targets an address, changes radio settings, or stores raw Bluetooth output.</div></aside>
     <section class="workspace">
       <div class="panel controls">
-        <div class="section-label">01 / Configure a trace</div>
+        <div class="section-label">01 / Synthetic training</div>
         <label>Training scenario<select id="scenario" aria-describedby="scenarioHelp"></select><small id="scenarioHelp">Synthetic events only — no real device identifiers.</small></label>
         <label>Intensity <output id="intensityValue">5</output><input id="intensity" type="range" min="1" max="10" value="5" aria-label="Simulation intensity"></label>
         <button id="run"><span>Generate synthetic trace</span><span aria-hidden="true">↗</span></button>
       </div>
-      <div id="scenarioCard" class="panel scenario-card"><div class="section-label">Scenario brief</div><h2>Loading scenarios…</h2><p>Preparing the local training catalog.</p></div>
+      <div class="panel scenario-card"><div class="section-label">02 / Hardware capability</div><div id="hardwareStatus"><h2>Checking local adapter…</h2><p>Reading capability status without starting a scan.</p></div><div class="scan-controls"><label>Discovery window <select id="scanDuration"><option value="5">5 seconds</option><option value="10" selected>10 seconds</option><option value="20">20 seconds</option></select></label><label class="consent"><input id="authorized" type="checkbox"><span>I own or have explicit permission to monitor nearby devices.</span></label><button id="scan" class="secondary" disabled><span>Run read-only discovery</span><span aria-hidden="true">⌁</span></button></div></div>
     </section>
-    <section id="result" class="panel result empty" aria-live="polite"><div class="empty-icon">◎</div><h2>Your trace will appear here</h2><p>Select a scenario, set an intensity, and generate a synthetic event stream.</p></section>
-    <footer><span>Built for education &amp; defense</span><span>All IDs are synthetic <b>SIM-####</b></span><span>Python standard library</span></footer>
+    <section id="result" class="panel result empty" aria-live="polite"><div class="empty-icon">◎</div><h2>Your telemetry will appear here</h2><p>Generate a synthetic trace or run an authorized, privacy-safe discovery.</p></section>
+    <footer><span>Built for education &amp; defense</span><span>Identifiers masked as <b>ble-########</b></span><span>Simulation default</span></footer>
   </main>
   <script src="/app.js"></script>
-</body>
 </html>
