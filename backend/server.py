@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
@@ -9,6 +10,7 @@ from urllib.parse import urlparse
 from simulator import list_scenarios, simulate
 
 ROOT = Path(__file__).resolve().parent.parent
+
 
 class Handler(BaseHTTPRequestHandler):
     def _send(self, status: int, payload: object, content_type: str = "application/json") -> None:
@@ -26,6 +28,16 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, {"status": "ok", "safe_mode": True, "hardware_access": False})
         if path == "/api/scenarios":
             return self._send(200, {"scenarios": list_scenarios()})
+        if path == "/api/docs":
+            return self._send(200, {
+                "safe_mode": True,
+                "endpoints": {
+                    "GET /api/health": "local service status",
+                    "GET /api/scenarios": "available synthetic scenarios",
+                    "POST /api/simulate": "generate a synthetic trace",
+                },
+                "request_example": {"scenario": "discovery_burst", "intensity": 5, "seed": 7},
+            })
         if path == "/":
             html = (ROOT / "frontend" / "index.html").read_bytes()
             return self._send(200, html, "text/html")
@@ -42,6 +54,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(404, {"error": "not found"})
         try:
             length = int(self.headers.get("Content-Length", "0"))
+            if length > 4096:
+                raise ValueError("request body is too large")
             data = json.loads(self.rfile.read(length) or b"{}")
             result = simulate(data.get("scenario", ""), int(data.get("intensity", 5)), int(data.get("seed", 7)))
         except (ValueError, TypeError, json.JSONDecodeError) as exc:
@@ -53,14 +67,16 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
-    server = ThreadingHTTPServer(("127.0.0.1", 8080), Handler)
-    print("Bluetooth Security Lab running at http://127.0.0.1:8080 (safe simulation only)")
+    port = int(os.environ.get("PORT", "8080"))
+    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    print(f"Bluetooth Security Lab running at http://127.0.0.1:{port} (safe simulation only)")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print("\nStopping lab")
     finally:
         server.server_close()
+
 
 if __name__ == "__main__":
     main()
