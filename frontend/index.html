@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bluetooth Security Lab</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <p class="eyebrow">EDUCATIONAL DEFENSIVE LAB</p>
+      <h1>Bluetooth Security Lab</h1>
+      <p class="subtitle">Explore synthetic telemetry patterns and defensive controls without touching Bluetooth hardware.</p>
+    </header>
+    <aside class="warning"><strong>Safety boundary:</strong> This lab is local-only. It does not scan, connect, jam, inject packets, target devices, or invoke Bluetooth system tools.</aside>
+    <section class="panel controls">
+      <label>Training scenario<select id="scenario"></select></label>
+      <label>Intensity <input id="intensity" type="range" min="1" max="10" value="5"><output id="intensityValue">5</output></label>
+      <button id="run">Generate synthetic trace</button>
+    </section>
+    <section id="result" class="panel empty">Choose a scenario and generate a trace.</section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
